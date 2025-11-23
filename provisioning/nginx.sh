@@ -141,7 +141,7 @@ EOF
 ln -s /etc/nginx/sites-available/java-app /etc/nginx/sites-enabled/
 
 # Test Nginx configuration
-echo "Testing Nginx configuration..."
+echo "Testing Nginx configu ration..."
 nginx -t
 
 if [ $? -eq 0 ]; then
