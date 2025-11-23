@@ -1,52 +1,39 @@
 #!/bin/bash
 
+# 1. Install MariaDB
+echo "Updating system and installing MariaDB..."
+dnf install -y mariadb-server
 
-#===========================================
-# MariaDB Installation and Configuration
-#===========================================
-
-echo "==================================="
-echo "Installing and Configuring MariaDB"
-echo "==================================="
-
-# Update system packages
-dnf update -y
-
-# Install MariaDB server
-dnf install -y mariadb-server mariadb
-
-# Enable and start MariaDB service
-systemctl enable mariadb
+# 2. Start Service
+echo "Starting MariaDB Service..."
 systemctl start mariadb
+systemctl enable mariadb
 
-# Wait a few seconds for MariaDB to initialize
-sleep 5
+# 3. Configure Database & User
+# UPDATED: Matches your config file (dbname: accounts, user: appuser)
+DB_NAME="accounts"
+DB_USER="appuser"
+DB_PASS="app123"
 
-# Secure MariaDB installation (optional)
-echo "Securing MariaDB installation..."
-mysql_secure_installation <<EOF
+echo "Configuring Database: $DB_NAME"
 
-y #Set a root password.
-app123 #New password:app123
-app123 #Re-enter new password:app123
-y #Remove anonymous users
-y #Disallow root login remotely
-y #Remove test database and access to it
-y #reload privileges so changes take effect.
+mysql -u root <<EOF
+CREATE DATABASE IF NOT EXISTS $DB_NAME;
+CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED BY '$DB_PASS';
+GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'%';
+FLUSH PRIVILEGES;
 EOF
 
-# Create database and user for Java application
-echo "Creating database and user..."
-mysql -u root -papp123 <<MYSQL_SCRIPT  # connect to MariaDB as the root user with password app123
-CREATE DATABASE IF NOT EXISTS appdb CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-CREATE USER IF NOT EXISTS 'appuser'@'%' IDENTIFIED BY 'app123';
-GRANT ALL PRIVILEGES ON appdb.* TO 'appuser'@'%';
-FLUSH PRIVILEGES;
-MYSQL_SCRIPT
+# 4. Configure Remote Access (Bind Address)
+echo "Configuring Remote Access..."
+# Backup config
+cp /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/mariadb-server.cnf.bak
 
-echo "Configuring MariaDB to allow remote connections..."
-sed -i "s/^bind-address.*/bind-address = 0.0.0.0/" /etc/my.cnf.d/mariadb-server.cnf
+# Allow 0.0.0.0 (Remote connections)
+sed -i 's/^bind-address/#bind-address/' /etc/my.cnf.d/mariadb-server.cnf
+echo "[mysqld]" >> /etc/my.cnf.d/mariadb-server.cnf
+echo "bind-address=0.0.0.0" >> /etc/my.cnf.d/mariadb-server.cnf
 
-# Restart MariaDB to apply changes
+# 5. Restart
 systemctl restart mariadb
-
+echo "MariaDB Setup Complete for database: $DB_NAME"
