@@ -2,16 +2,16 @@
 
 #===========================================
 # Apache Tomcat Installation and Configuration
-# Customized for Multi-Tier Java Application
+# For CentOS / RHEL / Rocky / AlmaLinux
 #===========================================
 
 echo "==================================="
-echo "Installing Apache Tomcat 9"
+echo "Installing Apache Tomcat 9 on CentOS"
 echo "==================================="
 
 # Update system
-apt-get update
-apt-get install -y openjdk-11-jdk wget curl
+yum update -y
+yum install -y java-11-openjdk java-11-openjdk-devel wget curl tar
 
 # Verify Java installation
 echo "Java version:"
@@ -27,21 +27,20 @@ echo "Downloading Tomcat ${TOMCAT_VERSION}..."
 cd /tmp
 wget -q https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
 
-# Extract Tomcat
 echo "Extracting Tomcat..."
 tar xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
 mv apache-tomcat-${TOMCAT_VERSION} ${TOMCAT_HOME}
 
-# Create tomcat user
+# Create Tomcat user
 echo "Creating tomcat user..."
 useradd -r -m -U -d ${TOMCAT_HOME} -s /bin/false ${TOMCAT_USER} 2>/dev/null || true
 
-# Set proper permissions
+# Set permissions
 echo "Setting permissions..."
 chown -R ${TOMCAT_USER}:${TOMCAT_USER} ${TOMCAT_HOME}
 chmod +x ${TOMCAT_HOME}/bin/*.sh
 
-# Configure Tomcat server.xml
+# Configure server.xml
 echo "Configuring Tomcat server.xml..."
 cat > ${TOMCAT_HOME}/conf/server.xml <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -61,7 +60,6 @@ cat > ${TOMCAT_HOME}/conf/server.xml <<'EOF'
   </GlobalNamingResources>
 
   <Service name="Catalina">
-    <!-- HTTP Connector - Optimized for your project -->
     <Connector port="8080" protocol="HTTP/1.1"
                connectionTimeout="20000"
                redirectPort="8443"
@@ -83,7 +81,6 @@ cat > ${TOMCAT_HOME}/conf/server.xml <<'EOF'
       <Host name="localhost" appBase="webapps"
             unpackWARs="true" autoDeploy="true">
 
-        <!-- Access Log with detailed information -->
         <Valve className="org.apache.catalina.valves.AccessLogValve"
                directory="logs"
                prefix="localhost_access_log" suffix=".txt"
@@ -103,11 +100,7 @@ EOF
 echo "Configuring Tomcat users..."
 cat > ${TOMCAT_HOME}/conf/tomcat-users.xml <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
-<tomcat-users xmlns="http://tomcat.apache.org/xml"
-              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
-              version="1.0">
-
+<tomcat-users>
   <role rolename="manager-gui"/>
   <role rolename="manager-script"/>
   <role rolename="manager-jmx"/>
@@ -115,39 +108,24 @@ cat > ${TOMCAT_HOME}/conf/tomcat-users.xml <<'EOF'
   <role rolename="admin-gui"/>
   <role rolename="admin-script"/>
 
-  <user username="admin" 
-        password="admin123" 
+  <user username="admin" password="admin123"
         roles="manager-gui,manager-script,manager-jmx,manager-status,admin-gui,admin-script"/>
 
-  <user username="deployer" 
-        password="deployer123" 
+  <user username="deployer" password="deployer123"
         roles="manager-script"/>
-
 </tomcat-users>
 EOF
 
-# Configure Manager App - Allow remote access
+# Allow remote Manager access
 echo "Configuring Manager app..."
+mkdir -p ${TOMCAT_HOME}/webapps/manager/META-INF
+
 cat > ${TOMCAT_HOME}/webapps/manager/META-INF/context.xml <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<Context antiResourceLocking="false" privileged="true" >
-  <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
-                   sameSiteCookies="strict" />
-  <!-- Allow access from Nginx and host machine -->
-  <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter\$LruCache(?:\$1)?|java\.util\.(?:Linked)?HashMap"/>
+<Context antiResourceLocking="false" privileged="true">
+  <CookieProcessor sameSiteCookies="strict" />
+  <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|java\.util\.(?:Linked)?HashMap"/>
 </Context>
 EOF
-
-# Configure Host Manager App - Allow remote access
-cat > ${TOMCAT_HOME}/webapps/host-manager/META-INF/context.xml <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<Context antiResourceLocking="false" privileged="true" >
-  <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
-                   sameSiteCookies="strict" />
-  <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter\$LruCache(?:\$1)?|java\.util\.(?:Linked)?HashMap"/>
-</Context>
-EOF
-
 
 # Create systemd service
 echo "Creating systemd service..."
@@ -159,7 +137,7 @@ After=network.target
 [Service]
 Type=forking
 
-Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64"
+Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk"
 Environment="CATALINA_PID=${TOMCAT_HOME}/temp/tomcat.pid"
 Environment="CATALINA_HOME=${TOMCAT_HOME}"
 Environment="CATALINA_BASE=${TOMCAT_HOME}"
@@ -170,8 +148,7 @@ ExecStop=${TOMCAT_HOME}/bin/shutdown.sh
 User=${TOMCAT_USER}
 Group=${TOMCAT_USER}
 UMask=0007
-RestartSec=10
-Restart=always
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
@@ -188,38 +165,17 @@ echo "Starting Tomcat..."
 systemctl start tomcat
 systemctl enable tomcat
 
-# Wait for startup
-echo "Waiting for Tomcat to start..."
 sleep 15
 
-# Verify
 if systemctl is-active --quiet tomcat; then
     echo ""
     echo "==================================="
-    echo "✅ Tomcat installation complete!"
+    echo "✅ Tomcat installation complete on CentOS!"
     echo "==================================="
-    echo "Version: ${TOMCAT_VERSION}"
-    echo "Location: ${TOMCAT_HOME}"
-    echo ""
-    echo "🌐 Access URLs:"
-    echo "  Application:  http://192.168.56.12:8080"
-    echo "  Via Nginx:    https://192.168.56.11"
-    echo "  Manager GUI:  http://192.168.56.12:8080/manager"
-    echo ""
-    echo "🔑 Credentials:"
-    echo "  Username: admin"
-    echo "  Password: admin123"
-    echo ""
-    echo "📦 Deploy your WAR:"
-    echo "  sudo cp your-app.war ${TOMCAT_HOME}/webapps/"
-    echo ""
-    echo "📊 Useful commands:"
-    echo "  Status:  sudo systemctl status tomcat"
-    echo "  Logs:    sudo tail -f ${TOMCAT_HOME}/logs/catalina.out"
-    echo "  Restart: sudo systemctl restart tomcat"
-    echo "==================================="
+    echo "Application: http://<your-ip>:8080"
+    echo "Manager GUI: http://<your-ip>:8080/manager"
 else
     echo "❌ ERROR: Tomcat failed to start!"
-    echo "Check logs: sudo journalctl -u tomcat -n 50"
+    systemctl status tomcat
     exit 1
 fi
