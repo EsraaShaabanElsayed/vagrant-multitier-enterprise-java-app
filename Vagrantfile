@@ -8,26 +8,29 @@ Vagrant.configure('2') do |config|
       vb.cpus = '1'
       vb.memory = '2048'
     end
+    machine.vm.provision "shell", path: "provisioning/mariadb.sh"
   end
-  config.vm.define "vprocache01" do |machine|
+  config.vm.define "mc" do |machine|
     machine.vm.box = 'eurolinux-vagrant/centos-stream-9'
     machine.vm.network "private_network", ip: '192.168.56.14'
-    machine.vm.hostname = "vprocache01"
+    machine.vm.hostname = "mc"
     machine.vm.provider "virtualbox" do |vb|
-      vb.name = "mc01"
+      vb.name = "mc"
       vb.cpus = '1'
       vb.memory = '1024'
     end
+    machine.vm.provision "shell", path: "provisioning/mc.sh"
   end
-  config.vm.define "vpromq01" do |machine|
+  config.vm.define "rmq" do |machine|
     machine.vm.box = 'eurolinux-vagrant/centos-stream-9'
     machine.vm.network "private_network", ip: '192.168.56.13'
-    machine.vm.hostname = "vpromq01"
+    machine.vm.hostname = "rmq"
     machine.vm.provider "virtualbox" do |vb|
-      vb.name = "rmq01"
+      vb.name = "rmq"
       vb.cpus = '1'
       vb.memory = '1024'
     end
+    machine.vm.provision "shell", path: "provisioning/rmq.sh"
   end
   config.vm.define "tomcat" do |machine|
     machine.vm.box = 'eurolinux-vagrant/centos-stream-9'
@@ -36,8 +39,9 @@ Vagrant.configure('2') do |config|
     machine.vm.provider "virtualbox" do |vb|
       vb.name = "app01"
       vb.cpus = '1'
-      vb.memory = '2048'
+      vb.memory = '4200'
     end
+    machine.vm.provision "shell", path: "provisioning/tomcat.sh"
   end
     config.vm.define "nginx" do |machine|
     machine.vm.box = 'ubuntu/jammy64'
@@ -48,5 +52,6 @@ Vagrant.configure('2') do |config|
       vb.cpus = '1'
       vb.memory = '800'
     end
+    machine.vm.provision "shell", path: "provisioning/nginx.sh"
   end
 end
