@@ -1,0 +1,57 @@
+oc new-project nginx-lab
+
+oc adm policy add-scc-to-user anyuid -z default
+oc get templates -n openshift | grep -i nginx
+oc process --parameters nginx-example -n openshift
+
+oc new-app nginx-example -n openshift
+
+
+
+# Create new HTTPS route
+oc create route edge nginx-https \
+  --service=nginx-example \
+  --insecure-policy=Redirect
+
+oc expose service nginx-example --name=nginx-https
+
+oc patch route nginx-https -p '{"spec":{"tls":{"termination":"edge","insecureEdgeTerminationPolicy":"Redirect"}}}'
+
+# View all resources
+oc get all
+
+# View services
+oc get svc
+
+# View routes
+oc get route
+
+# View deployments/deploymentconfigs
+oc get dc
+# or
+oc get deployment
+
+# View builds (if applicable)
+oc get builds
+
+# View imagestreams
+oc get is
+
+oc get route nginx-https -o jsonpath='{.spec.host}'
+
+curl -k https://$(oc get route nginx-https -o jsonpath='{.spec.host}')
+
+# Check pod status
+oc get pods
+
+# View application logs
+oc logs -l deployment=nginx-example
+
+# Or specify pod name
+oc logs <pod-name>
+
+# Describe pod
+oc describe pod -l deployment=nginx-example
+
+# Check if pod is healthy
+oc get pods -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}'
