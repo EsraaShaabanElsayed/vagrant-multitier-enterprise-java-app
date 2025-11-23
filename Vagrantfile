@@ -26,7 +26,7 @@ Vagrant.configure('2') do |config|
     machine.vm.provider "virtualbox" do |vb|
       vb.name = "rmq01"
       vb.cpus = '1'
-      vb.memory = '600'
+      vb.memory = '1024'
     end
   end
   config.vm.define "tomcat" do |machine|
