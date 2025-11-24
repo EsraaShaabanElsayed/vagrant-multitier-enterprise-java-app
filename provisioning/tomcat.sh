@@ -80,19 +80,6 @@ fi
 # Backup original
 cp $APP_PROPS ${APP_PROPS}.bak
 
-# Fix the hardcoded IP to use hostname
-echo "Replacing hardcoded database IP with hostname..."
-sed -i 's|spring.datasource.url=jdbc:mysql://192.168.56.15:3306/accounts|spring.datasource.url=jdbc:mysql://vprodb:3306/accounts|g' $APP_PROPS
-
-# Verify memcached and rabbitmq settings (should already be hostnames)
-sed -i 's/memcached.active.host=.*/memcached.active.host=mc/g' $APP_PROPS
-sed -i 's/rabbitmq.address=.*/rabbitmq.address=rmq/g' $APP_PROPS
-
-echo ""
-echo "===== Updated application.properties ====="
-cat $APP_PROPS
-echo "==========================================="
-echo ""
 
 # ------------------------------------------------------------------
 # 4. TEST CONNECTIVITY TO BACKEND SERVICES
