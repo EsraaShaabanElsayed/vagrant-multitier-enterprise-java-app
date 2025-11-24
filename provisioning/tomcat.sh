@@ -67,18 +67,6 @@ echo "Cloning source code from $REPO_URL..."
 rm -rf $PROJECT_DIR
 git clone $REPO_URL $PROJECT_DIR
 
-echo "Fixing application.properties to use HOSTNAMES..."
-APP_PROPS="$PROJECT_DIR/src/main/resources/application.properties"
-
-# Verify the file exists
-if [ ! -f "$APP_PROPS" ]; then
-    echo "ERROR: application.properties not found at $APP_PROPS"
-    find $PROJECT_DIR -name "application.properties"
-    exit 1
-fi
-
-# Backup original
-cp $APP_PROPS ${APP_PROPS}.bak
 
 
 # ------------------------------------------------------------------

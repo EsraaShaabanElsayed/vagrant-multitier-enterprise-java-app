@@ -1,2 +1,12 @@
 .vagrant/
 target/
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+*.pem
+*.key
+.env
+override.tf
+override.tf.json
