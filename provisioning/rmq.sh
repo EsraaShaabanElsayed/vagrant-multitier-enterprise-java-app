@@ -141,6 +141,15 @@ sudo systemctl start rabbitmq-server
 echo "Enabling RabbitMQ management plugin..."
 sudo rabbitmq-plugins enable rabbitmq_management
 
+# Wait for RabbitMQ to be fully started
+echo "Waiting for RabbitMQ to be fully started..."
+sleep 10
+# Create application user for remote connections
+echo "Creating RabbitMQ user for application..."
+sudo rabbitmqctl add_user test test
+sudo rabbitmqctl set_user_tags test administrator
+sudo rabbitmqctl set_permissions -p / test ".*" ".*" ".*"
+
 # Create admin user
 echo "Creating admin user..."
 sudo rabbitmqctl add_user admin admin123
