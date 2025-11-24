@@ -37,3 +37,7 @@ echo "bind-address=0.0.0.0" >> /etc/my.cnf.d/mariadb-server.cnf
 # 5. Restart
 systemctl restart mariadb
 echo "MariaDB Setup Complete for database: $DB_NAME"
+
+# 6. Initialize Database Schema (NEW!)
+echo "Initializing database tables from SQL file..."
+mysql -u root $DB_NAME < /vagrant/provisioning/init_database.sql

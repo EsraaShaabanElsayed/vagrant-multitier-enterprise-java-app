@@ -80,7 +80,6 @@ server {
     ssl_session_timeout 10m;
 
     # Security Headers
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
@@ -93,13 +92,16 @@ server {
     location / {
         proxy_pass http://tomcat_backend;
         
-        # Proxy Headers
+        # Proxy Headers - Critical for proper resource loading
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Port $server_port;
+        
+        # Important: Preserve original request URI
+        proxy_set_header X-Original-URI $request_uri;
         
         # Timeout settings
         proxy_connect_timeout 60s;
@@ -111,6 +113,25 @@ server {
         proxy_buffer_size 4k;
         proxy_buffers 8 4k;
         proxy_busy_buffers_size 8k;
+        
+        # Disable redirects rewriting
+        proxy_redirect off;
+    }
+
+    # Static resources - explicit handling
+    location ~* \.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|otf|map)$ {
+        proxy_pass http://tomcat_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Cache static resources
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+        
+        # Better error logging for debugging
+        error_log /var/log/nginx/static-error.log;
     }
 
     # Health check endpoint
@@ -118,14 +139,6 @@ server {
         access_log off;
         return 200 "Nginx is healthy and running with HTTPS\n";
         add_header Content-Type text/plain;
-    }
-
-    # Static content caching
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
-        proxy_pass http://tomcat_backend;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-        access_log off;
     }
 
     # Deny access to hidden files
@@ -141,7 +154,7 @@ EOF
 ln -s /etc/nginx/sites-available/java-app /etc/nginx/sites-enabled/
 
 # Test Nginx configuration
-echo "Testing Nginx configu ration..."
+echo "Testing Nginx configuration..."
 nginx -t
 
 if [ $? -eq 0 ]; then
@@ -167,6 +180,10 @@ if [ $? -eq 0 ]; then
     echo "Note: Your browser will show a security warning"
     echo "      because this is a self-signed certificate."
     echo "      Click 'Advanced' and 'Proceed' to continue."
+    echo ""
+    echo "To check for errors:"
+    echo "  sudo tail -f /var/log/nginx/java-app-error.log"
+    echo "  sudo tail -f /var/log/nginx/static-error.log"
     echo "==================================="
 else
     echo "ERROR: Nginx configuration test failed!"
