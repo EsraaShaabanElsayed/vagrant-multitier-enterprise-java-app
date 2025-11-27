@@ -275,6 +275,12 @@ elasticsearch.host=vprosearch01
 elasticsearch.port=9300
 elasticsearch.cluster=vprofile
 elasticsearch.node=vprofilenode
+
+# Spring Datasource Configuration (for compatibility)
+spring.datasource.url=jdbc:mariadb://${db_endpoint}/${db_name}?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=true&trustServerCertificate=true
+spring.datasource.username=${db_username}
+spring.datasource.password=${db_password}
+spring.datasource.driver-class-name=org.mariadb.jdbc.Driver
 EOF
 
 echo "application.properties updated successfully!"
