@@ -9,6 +9,9 @@ jdbc.password=${db_password}
 #For Active Host
 memcached.active.host=${memcached_endpoint}
 memcached.active.port=11211
+#For StandBy Host
+memcached.standBy.host=${memcached_endpoint}
+memcached.standBy.port=11211
 
 #RabbitMQ Configuration
 rabbitmq.address=${rabbitmq_endpoint}

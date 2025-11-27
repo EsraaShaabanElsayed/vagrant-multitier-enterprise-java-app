@@ -108,7 +108,7 @@ test_connection() {
     local host=$1
     local port=$2
     local service=$3
-    local max_retries=5
+    local max_retries=15
     local retry=0
     
     while [ $retry -lt $max_retries ]; do
@@ -118,8 +118,8 @@ test_connection() {
         else
             retry=$((retry + 1))
             if [ $retry -lt $max_retries ]; then
-                echo "⟳ Attempt $retry/$max_retries: $service ($host:$port) not ready, retrying in 10s..."
-                sleep 10
+                echo "⟳ Attempt $retry/$max_retries: $service ($host:$port) not ready, retrying in 20s..."
+                sleep 20
             fi
         fi
     done
@@ -165,14 +165,13 @@ echo "Memcached:       $([ $MC_OK -eq 1 ] && echo '✓ PASS' || echo '✗ FAIL')
 echo "RabbitMQ:        $([ $RMQ_OK -eq 1 ] && echo '✓ PASS' || echo '✗ FAIL')"
 echo "=========================================="
 
-# Optional: Fail deployment if critical services are unreachable
+# Fail deployment if critical services are unreachable
 if [ $DB_OK -eq 0 ] || [ $MC_OK -eq 0 ] || [ $RMQ_OK -eq 0 ]; then
     echo ""
-    echo "⚠️  WARNING: Some backend services are unreachable!"
-    echo "Application may not function correctly."
+    echo "✗ ERROR: Some backend services are unreachable!"
+    echo "Cannot proceed with deployment."
     echo "Check Security Groups and ensure services are in the same VPC."
-    # Uncomment next line to fail the script if backends are unreachable
-    # exit 1
+    exit 1
 fi
 # ------------------------------------------------------------------
 # CLONE VPROFILE PROJECT
@@ -259,6 +258,7 @@ sed -i "s|^jdbc.password=.*|jdbc.password=${db_password}|" src/main/resources/ap
 
 # Update Memcached Configuration
 sed -i "s|^memcached.active.host=.*|memcached.active.host=${memcached_endpoint}|" src/main/resources/application.properties
+sed -i "s|^memcached.standBy.host=.*|memcached.standBy.host=${memcached_endpoint}|" src/main/resources/application.properties
 
 # Update RabbitMQ Configuration
 sed -i "s|^rabbitmq.address=.*|rabbitmq.address=${rabbitmq_endpoint}|" src/main/resources/application.properties
