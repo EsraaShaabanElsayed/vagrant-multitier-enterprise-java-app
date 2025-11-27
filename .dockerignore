@@ -1,0 +1,12 @@
+target
+.git
+.gitignore
+.vagrant
+Readm.md
+README.md
+*.iml
+.idea
+*.log
+node_modules
+Dockerfile
+docker-compose.yml
