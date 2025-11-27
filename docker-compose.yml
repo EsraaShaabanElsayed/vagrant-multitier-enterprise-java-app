@@ -1,74 +1,53 @@
-
 version: "3.8"
-services:
-  app:
-    build: .
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
-      - rabbitmq
-    environment:
-      SPRING_DATASOURCE_URL: "jdbc:mysql://db:3306/vprofile"
-      SPRING_DATASOURCE_USERNAME: "vprofile"
-      SPRING_DATASOURCE_PASSWORD: "secret"
-      SPRING_RABBITMQ_HOST: "rabbitmq"
-      SPRING_RABBITMQ_USERNAME: "user"
-      SPRING_RABBITMQ_PASSWORD: "pass"
-    restart: unless-stopped
-    networks:
-      - appnet
 
-  db:
-    image: mariadb:10.5
+services:
+  vprofile-db:
+    image: mariadb:10.6
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: vprofile
-      MYSQL_USER: vprofile
-      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: accounts
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+    ports:
+      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./src/main/resources/db_backup.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    networks:
-      - appnet
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - ./src/main/resources/db_backup.sql:/docker-entrypoint-initdb.d/db_backup.sql
 
-  rabbitmq:
+  vprofile-memcached:
+    image: memcached:1.6
+    ports:
+      - "11211:11211"
+
+  vprofile-rabbitmq:
     image: rabbitmq:3-management
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: pass
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - appnet
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
 
-  nginx:
-    image: nginx:alpine
+  vprofile-app:
+    build: .
     ports:
-      - "80:80"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - "8080:8080"
+    environment:
+      DB_HOST: vprofile-db
+      DB_PORT: 3306
+      DB_NAME: accounts
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      MEMCACHED_HOST: vprofile-memcached
+      MEMCACHED_PORT: 11211
+      RABBITMQ_HOST: vprofile-rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
     depends_on:
-      - app
-    networks:
-      - appnet
+      - vprofile-db
+      - vprofile-memcached
+      - vprofile-rabbitmq
 
 volumes:
   db_data:
-  rabbitmq_data:
-
-networks:
-  appnet:
