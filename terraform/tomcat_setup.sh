@@ -250,26 +250,32 @@ echo ""
 # ------------------------------------------------------------------
 echo "Updating application.properties with AWS service endpoints..."
 
-# Update JDBC Configuration
-sed -i "s|^jdbc.driverClassName=.*|jdbc.driverClassName=org.mariadb.jdbc.Driver|" src/main/resources/application.properties
-sed -i "s|^jdbc.url=.*|jdbc.url=jdbc:mariadb://${db_endpoint}/${db_name}?useUnicode=true\&characterEncoding=UTF-8\&zeroDateTimeBehavior=convertToNull\&sslMode=REQUIRED|" src/main/resources/application.properties
-sed -i "s|^jdbc.username=.*|jdbc.username=${db_username}|" src/main/resources/application.properties
-sed -i "s|^jdbc.password=.*|jdbc.password=${db_password}|" src/main/resources/application.properties
+# Overwrite application.properties with correct configuration
+cat > src/main/resources/application.properties <<EOF
+#JDBC Configutation for Database Connection
+jdbc.driverClassName=org.mariadb.jdbc.Driver
+jdbc.url=jdbc:mariadb://${db_endpoint}/${db_name}?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=true&trustServerCertificate=true
+jdbc.username=${db_username}
+jdbc.password=${db_password}
 
-# Update Memcached Configuration
-sed -i "s|^memcached.active.host=.*|memcached.active.host=${memcached_endpoint}|" src/main/resources/application.properties
-sed -i "s|^memcached.standBy.host=.*|memcached.standBy.host=${memcached_endpoint}|" src/main/resources/application.properties
+# Memcached Configuration For Active and StandBy Host
+memcached.active.host=${memcached_endpoint}
+memcached.active.port=11211
+memcached.standBy.host=${memcached_endpoint}
+memcached.standBy.port=11211
 
-# Update RabbitMQ Configuration
-sed -i "s|^rabbitmq.address=.*|rabbitmq.address=${rabbitmq_endpoint}|" src/main/resources/application.properties
-sed -i "s|^rabbitmq.username=.*|rabbitmq.username=${rabbitmq_username}|" src/main/resources/application.properties
-sed -i "s|^rabbitmq.password=.*|rabbitmq.password=${rabbitmq_password}|" src/main/resources/application.properties
+# RabbitMq Configuration
+rabbitmq.address=${rabbitmq_endpoint}
+rabbitmq.port=5671
+rabbitmq.username=${rabbitmq_username}
+rabbitmq.password=${rabbitmq_password}
 
-# Update Spring Datasource Configuration (if present)
-sed -i "s|^spring.datasource.url=.*|spring.datasource.url=jdbc:mariadb://${db_endpoint}/${db_name}?useUnicode=true\&characterEncoding=UTF-8\&zeroDateTimeBehavior=convertToNull\&sslMode=REQUIRED|" src/main/resources/application.properties
-sed -i "s|^spring.datasource.username=.*|spring.datasource.username=${db_username}|" src/main/resources/application.properties
-sed -i "s|^spring.datasource.password=.*|spring.datasource.password=${db_password}|" src/main/resources/application.properties
-sed -i "s|^spring.datasource.driver-class-name=.*|spring.datasource.driver-class-name=org.mariadb.jdbc.Driver|" src/main/resources/application.properties
+# Elasticsearch Configuration
+elasticsearch.host=vprosearch01
+elasticsearch.port=9300
+elasticsearch.cluster=vprofile
+elasticsearch.node=vprofilenode
+EOF
 
 echo "application.properties updated successfully!"
 cat src/main/resources/application.properties
