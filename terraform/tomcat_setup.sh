@@ -24,7 +24,7 @@ apt-get update -y
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
 
 echo "Installing Java 8, Maven, Git, and utilities..."
-apt-get install -y openjdk-8-jdk maven git wget curl netcat unzip
+apt-get install -y openjdk-8-jdk maven git wget curl netcat unzip mysql-client
 
 # Set JAVA_HOME for Java 8
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
@@ -200,6 +200,52 @@ for host in "$DB_HOST" "${memcached_endpoint}" "${rabbitmq_endpoint}"; do
         echo "✗ DNS FAILED: $host"
     fi
 done
+# ------------------------------------------------------------------
+# INITIALIZE RDS DATABASE
+# ------------------------------------------------------------------
+echo ""
+echo "=========================================="
+echo "Initializing RDS Database..."
+echo "=========================================="
+
+# Extract hostname from endpoint (remove port if present)
+DB_HOST_ONLY=$(echo "${db_endpoint}" | cut -d: -f1)
+
+echo "Database Host: $DB_HOST_ONLY"
+echo "Database Name: ${db_name}"
+echo "Database User: ${db_username}"
+
+# Check if database is accessible
+if mysql -h "$DB_HOST_ONLY" -u "${db_username}" -p"${db_password}" -e "USE ${db_name};" 2>/dev/null; then
+    echo "✓ Database connection successful"
+    
+    # Check if tables already exist
+    TABLE_COUNT=$(mysql -h "$DB_HOST_ONLY" -u "${db_username}" -p"${db_password}" -D "${db_name}" -se "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${db_name}';")
+    
+    if [ "$TABLE_COUNT" -gt 0 ]; then
+        echo "⚠️  Database already has $TABLE_COUNT tables. Skipping initialization."
+    else
+        echo "Initializing database with schema and data..."
+        if mysql -h "$DB_HOST_ONLY" -u "${db_username}" -p"${db_password}" "${db_name}" < src/main/resources/db_backup.sql; then
+            echo "✓ Database initialized successfully!"
+        else
+            echo "✗ Database initialization failed!"
+            exit 1
+        fi
+    fi
+else
+    echo "✗ ERROR: Cannot connect to database!"
+    echo "Please check:"
+    echo "  - Security group allows EC2 to access RDS"
+    echo "  - RDS endpoint is correct: $DB_HOST_ONLY"
+    echo "  - Database credentials are correct"
+    exit 1
+fi
+
+echo "=========================================="
+echo "Database initialization complete!"
+echo "=========================================="
+echo ""
 # ------------------------------------------------------------------
 # CREATE APPLICATION.PROPERTIES
 # ------------------------------------------------------------------

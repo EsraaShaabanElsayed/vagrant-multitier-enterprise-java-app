@@ -360,10 +360,10 @@ resource "aws_mq_broker" "rabbitmq" {
   engine_type        = "RabbitMQ"
   engine_version     = "4.2"
   host_instance_type = "mq.m7g.large"
-  deployment_mode    = "ACTIVE_STANDBY_MULTI_AZ"
+  deployment_mode    = "SINGLE_INSTANCE"
 
   publicly_accessible        = false
-  subnet_ids                 = aws_subnet.private[*].id
+  subnet_ids                 = [aws_subnet.private[0].id]
   security_groups            = [aws_security_group.amazonmq.id]
   auto_minor_version_upgrade = true
 
