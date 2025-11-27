@@ -252,7 +252,7 @@ echo "Updating application.properties with AWS service endpoints..."
 
 # Update JDBC Configuration
 sed -i "s|^jdbc.driverClassName=.*|jdbc.driverClassName=org.mariadb.jdbc.Driver|" src/main/resources/application.properties
-sed -i "s|^jdbc.url=.*|jdbc.url=jdbc:mariadb://${db_endpoint}/${db_name}?useUnicode=true\&characterEncoding=UTF-8\&zeroDateTimeBehavior=convertToNull|" src/main/resources/application.properties
+sed -i "s|^jdbc.url=.*|jdbc.url=jdbc:mariadb://${db_endpoint}/${db_name}?useUnicode=true\&characterEncoding=UTF-8\&zeroDateTimeBehavior=convertToNull\&useSSL=true\&requireSSL=true|" src/main/resources/application.properties
 sed -i "s|^jdbc.username=.*|jdbc.username=${db_username}|" src/main/resources/application.properties
 sed -i "s|^jdbc.password=.*|jdbc.password=${db_password}|" src/main/resources/application.properties
 
@@ -266,7 +266,7 @@ sed -i "s|^rabbitmq.username=.*|rabbitmq.username=${rabbitmq_username}|" src/mai
 sed -i "s|^rabbitmq.password=.*|rabbitmq.password=${rabbitmq_password}|" src/main/resources/application.properties
 
 # Update Spring Datasource Configuration (if present)
-sed -i "s|^spring.datasource.url=.*|spring.datasource.url=jdbc:mariadb://${db_endpoint}/${db_name}?useUnicode=true\&characterEncoding=UTF-8\&zeroDateTimeBehavior=convertToNull|" src/main/resources/application.properties
+sed -i "s|^spring.datasource.url=.*|spring.datasource.url=jdbc:mariadb://${db_endpoint}/${db_name}?useUnicode=true\&characterEncoding=UTF-8\&zeroDateTimeBehavior=convertToNull\&useSSL=true\&requireSSL=true|" src/main/resources/application.properties
 sed -i "s|^spring.datasource.username=.*|spring.datasource.username=${db_username}|" src/main/resources/application.properties
 sed -i "s|^spring.datasource.password=.*|spring.datasource.password=${db_password}|" src/main/resources/application.properties
 sed -i "s|^spring.datasource.driver-class-name=.*|spring.datasource.driver-class-name=org.mariadb.jdbc.Driver|" src/main/resources/application.properties
